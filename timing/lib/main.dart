@@ -1,5 +1,4 @@
 
-
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
@@ -11,7 +10,6 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
@@ -28,28 +26,41 @@ class MyApp extends StatelessWidget {
   }
 }
 
+
 class MyAppState extends ChangeNotifier {
-  // List<TimerClock> timers = List.empty(growable: true);
   List<TimerClock> timers = [];
   
-  void timerStartStop(index) {
-
-    // if(timers[index].status == true) {
-    //   timers[index].stopTimer();
-    // } else {
-    //   timers[index].startTimer();
-    // }
-    print('Started/Stopped timer');
-    // notifyListeners();
-  }
-
-  void addTimer() {
-    timers.add(TimerClock());
-    print('Added timer');
+  void addTimer(String name) {
+    timers.add(TimerClock(name));
     notifyListeners();
   }
-  //TO-DO: Add timer and Delete Timer functions
+
+  void deleteTimer(TimerClock timer) {
+    for(TimerClock t in timers) {
+      if(t.hashCode == timer.hashCode) {
+        timers.remove(t);
+        break;
+      }
+    }
+    notifyListeners();
+  }
+
+  void startTimer(TimerClock t) {
+    t.startTimer();
+    notifyListeners();
+  }
+
+  void stopTimer(TimerClock t) {
+    t.stopTimer();
+    notifyListeners();
+  }
+
+  void setTimerName(TimerClock t, String name) {
+    t.name = name;
+    notifyListeners();
+  }
 }
+
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
@@ -77,7 +88,7 @@ class TimerClock {
   late String name;
   late List<Pair<DateTime>> past;
 
-  TimerClock() {
+  TimerClock(this.name) {
     running = Duration.zero;
     past = [];
   }
@@ -121,8 +132,66 @@ class TimerClock {
 }
 
 
-class _MyHomePageState extends State<MyHomePage> {
+class TimerCard extends StatelessWidget {
+  TimerCard({
+    super.key,
+    required this.t,
+  });
 
+  final TimerClock t;
+
+  final numFormat = NumberFormat('00', 'en_US');
+
+  @override
+  Widget build(BuildContext context) {
+  
+  var appState = context.watch<MyAppState>();
+
+
+  final theme = Theme.of(context);
+  final timeStyle = theme.textTheme.displayMedium;//!.copyWith(color: theme.colorScheme.onSecondary);
+  // final cardStyle = theme.colorScheme.primary;
+  
+    return Center(
+      child: Card(
+          child: InkWell(
+            onLongPress: () => {
+              Navigator.push(context, MaterialPageRoute(builder: (context) => TimerDetailsView(timer: t)))
+            },
+            onTap: () => { 
+                if(t.status == true) {
+                  appState.stopTimer(t)
+                } else {
+                  appState.startTimer(t)
+                }
+            },
+            child: SizedBox(
+              height: 120,
+              width: 180,
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Text(
+                        '${numFormat.format(t.running.inMinutes)}:${numFormat.format(t.running.inSeconds%60)}',
+                        style: timeStyle
+                        ),
+                    ),
+                      Text(t.name),
+                  ],
+                ),
+              ),
+              ),
+          ),
+      ),
+    );
+  }
+}
+
+
+class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
@@ -139,8 +208,38 @@ class _MyHomePageState extends State<MyHomePage> {
           actions: <Widget>[
             IconButton(
               onPressed: () {
-                appState.addTimer();
-                print('Timer added');
+                showModalBottomSheet<void>(context: context, builder: (BuildContext context) {
+                  return Scaffold(
+                  
+                  appBar: AppBar(
+                    // title: const Text('Add Timer'),
+                    
+                    // leading: TextButton(
+                    // // leading: IconButton(icon: Icon(Icons.cancel_outlined),
+                    //   child: const Text('Cancel'),
+                    //   onPressed: () => Navigator.pop(context),
+                    // ),
+                  ),
+                  // body: Card(child: const Text('Name')),
+                  body: Column(
+                    children: <Widget>[
+
+                      TextFormField(
+                        autocorrect: true,
+                        decoration: const InputDecoration(
+                          border: UnderlineInputBorder(),
+                          labelText: 'Enter timer name',
+                        ),
+                        onFieldSubmitted: (value) => appState.addTimer(value),                      
+                      )
+
+                    ],
+                  )
+                );
+              }
+              );
+
+
               },
               icon: const Icon(Icons.add_alarm_outlined))
           ],
@@ -158,8 +257,8 @@ class _MyHomePageState extends State<MyHomePage> {
         actions: <Widget>[
           IconButton(
             onPressed: () {
-              appState.addTimer();
-            },
+                appState.addTimer('Tmp');
+              },
             icon: const Icon(Icons.add_alarm_outlined))
         ],
       ),
@@ -176,7 +275,7 @@ class _MyHomePageState extends State<MyHomePage> {
               child: ListView(
                   children: <Widget>[
                     for(final t in appState.timers) 
-                      TimerView(t: t),
+                      TimerCard(t: t),
                   ],
                 ),
             ),
@@ -187,44 +286,55 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 }
 
-class TimerView extends StatelessWidget {
-  TimerView({
-    super.key,
-    required this.t,
-  });
 
-  final TimerClock t;
+class TimerDetailsView extends StatelessWidget {
 
-  final numFormat = NumberFormat('00', 'en_US');
+  const TimerDetailsView({super .key, required this.timer});
 
-  
+  final TimerClock timer;
 
   @override
   Widget build(BuildContext context) {
-  
-  final theme = Theme.of(context);
-  final timeStyle = theme.textTheme.displayMedium;//!.copyWith(color: theme.colorScheme.onSecondary);
-  // final cardStyle = theme.colorScheme.primary;
-  
-    return Center(
-      child: Card(
-        child: InkWell(
-          onLongPress: () => {
-            print('Long pressed this one')
-          },
-          onTap: () => { 
-            t.toggleTimer()
-          },
-          child: SizedBox(
-            height: 120,
-            width: 180,
-            child: Center(
-              child: Text(
-                '${numFormat.format(t.running.inMinutes)}:${numFormat.format(t.running.inSeconds%60)}',
-                style: timeStyle
+
+
+    var appContext = context.watch<MyAppState>();
+
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        title: Text(timer.name),
+      ),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(8.0, 40.0, 8.0, 8.0),
+          child: Column(
+        
+            children: [
+              SizedBox(
+                width: 350,
+                child: TextFormField(
+                  autocorrect: true,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    labelText: 'Timer Name'
+                  ),
+                  initialValue: timer.name,
+                  onFieldSubmitted: (value) => {
+                      appContext.setTimerName(timer, value),
+                      Navigator.pop(context) // TO-DO: Move this to a done button.
+                  },
+                  
                 ),
-            ),
-            ),
+              ),
+              FilledButton(
+                onPressed: () => {
+                  appContext.deleteTimer(timer),
+                  Navigator.pop(context)
+                },
+                child: const Text('Delete'),
+              ),
+            ]
+          ),
         ),
       ),
     );

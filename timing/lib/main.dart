@@ -1,7 +1,7 @@
 
 import 'dart:async';
-// import 'dart:html';
 
+import 'package:flutter/cupertino.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
@@ -200,7 +200,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
     var appState = context.watch<MyAppState>();
 
-    var timersCount = appState.timers.length;
+    // var timersCount = appState.timers.length;
 
     if(appState.timers.isEmpty) {
       return Scaffold(
@@ -235,23 +235,26 @@ class _MyHomePageState extends State<MyHomePage> {
         ],
       ),
       body: Center(
-        child: Column(
-          children: <Widget> [
-            const Text(
-              'Number of timers:',
-            ),
-            Text(
-              '$timersCount'
-            ),  
-            Expanded(
-              child: ListView(
-                  children: <Widget>[
-                    for(final t in appState.timers) 
-                      TimerCard(t: t),
-                  ],
-                ),
-            ),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.only(top:20.0, left: 20.0, right: 20.0),
+          child: Column(
+            children: <Widget> [
+              // const Text(
+              //   'Number of timers:',
+              // ),
+              // Text(
+              //   '$timersCount'
+              // ),  
+              Expanded(
+                child: ListView(
+                    children: <Widget>[
+                      for(final t in appState.timers) 
+                        TimerCard(t: t),
+                    ],
+                  ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -328,6 +331,8 @@ class TimerDetailsView extends StatelessWidget {
     nameController.text = timer.name;
 
     final actionButtonTextStyle = Theme.of(context).textTheme.titleMedium;
+    final deleteTextStyle = Theme.of(context).textTheme.titleMedium?.copyWith(backgroundColor: const Color.fromRGBO(244, 67, 54, 1), color: const Color.fromRGBO(255, 255, 255, 1));
+    
 
     return Scaffold(
       appBar: AppBar(
@@ -364,9 +369,13 @@ class TimerDetailsView extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(top:20.0),
                 child: FilledButton(
+                  style: const ButtonStyle(backgroundColor: MaterialStatePropertyAll(Colors.red)),
                   onPressed: () => {
-                    appState.deleteTimer(timer),
-                    Navigator.pop(context)
+                    print('Pressed'),
+                    cupertinoConfirmDelete(context, appState),
+                    print('And now we delete'),
+                    // appState.deleteTimer(timer),
+                    // Navigator.pop(context)
                   },
                   child: const Text('Delete'),
                 ),
@@ -375,6 +384,45 @@ class TimerDetailsView extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  Future<void> cupertinoConfirmDelete(BuildContext context, MyAppState appState ) {
+    print('We got till here');
+    return showCupertinoDialog<void>(context: context, builder: (BuildContext context) => 
+      CupertinoAlertDialog(
+        title: const Text('Confirm Delete'),
+        content: Text('Are you sure you want to delete timer ${timer.name}?'),
+        actions: <Widget> [
+          CupertinoDialogAction(
+            child: Text('No'),
+            isDefaultAction: true,
+            onPressed: () => {
+              Navigator.pop(context),
+            }
+          ),
+          CupertinoDialogAction(
+            child: Text('Yes'),
+            isDestructiveAction: true,
+            onPressed: () => {
+              Navigator.pop(context),
+              Navigator.pop(context),
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Center(child: Text('Deleted ${timer.name}')),
+                  duration: const Duration(seconds: 1),
+                  // action: SnackBarAction(
+                  //   label: 'Undo', 
+                  //   onPressed: () => {
+                  //      //TO-DO: Undo handled here
+                  //   })
+                )
+              ),
+              appState.deleteTimer(timer),
+            }
+          ),
+        ],
+        )
     );
   }
 }

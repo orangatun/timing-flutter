@@ -1,4 +1,6 @@
 
+import 'dart:async';
+
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
@@ -47,11 +49,16 @@ class MyAppState extends ChangeNotifier {
 
   void startTimer(TimerClock t) {
     t.startTimer();
-    notifyListeners();
+    t.sysTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      t.running += const Duration(seconds: 1);
+      notifyListeners();
+    });
+    // notifyListeners();
   }
 
   void stopTimer(TimerClock t) {
     t.stopTimer();
+    t.sysTimer.cancel();
     notifyListeners();
   }
 
@@ -87,6 +94,7 @@ class TimerClock {
   bool status = false;
   late String name;
   late List<Pair<DateTime>> past;
+  late Timer sysTimer;
 
   TimerClock(this.name) {
     running = Duration.zero;
@@ -109,17 +117,12 @@ class TimerClock {
   void startTimer() {
     status = true;
     start = DateTime.now();
-    print('Started timer');
   }
 
   void stopTimer() {
     status = false;
     end = DateTime.now();
-    print('Running before: $running');
-
-    running = running + end.difference(start);
     past.add(Pair<DateTime>(start, end));
-    print('Stopped timer $running');
   }
   
   void toggleTimer() {
@@ -150,7 +153,6 @@ class TimerCard extends StatelessWidget {
 
   final theme = Theme.of(context);
   final timeStyle = theme.textTheme.displayMedium;//!.copyWith(color: theme.colorScheme.onSecondary);
-  // final cardStyle = theme.colorScheme.primary;
   
     return Center(
       child: Card(

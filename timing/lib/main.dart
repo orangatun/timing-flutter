@@ -1,5 +1,6 @@
 
 import 'dart:async';
+// import 'dart:html';
 
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -53,7 +54,6 @@ class MyAppState extends ChangeNotifier {
       t.running += const Duration(seconds: 1);
       notifyListeners();
     });
-    // notifyListeners();
   }
 
   void stopTimer(TimerClock t) {
@@ -210,43 +210,13 @@ class _MyHomePageState extends State<MyHomePage> {
           actions: <Widget>[
             IconButton(
               onPressed: () {
-                showModalBottomSheet<void>(context: context, builder: (BuildContext context) {
-                  return Scaffold(
-                  
-                  appBar: AppBar(
-                    // title: const Text('Add Timer'),
-                    
-                    // leading: TextButton(
-                    // // leading: IconButton(icon: Icon(Icons.cancel_outlined),
-                    //   child: const Text('Cancel'),
-                    //   onPressed: () => Navigator.pop(context),
-                    // ),
-                  ),
-                  // body: Card(child: const Text('Name')),
-                  body: Column(
-                    children: <Widget>[
-
-                      TextFormField(
-                        autocorrect: true,
-                        decoration: const InputDecoration(
-                          border: UnderlineInputBorder(),
-                          labelText: 'Enter timer name',
-                        ),
-                        onFieldSubmitted: (value) => appState.addTimer(value),                      
-                      )
-
-                    ],
-                  )
-                );
-              }
-              );
-
-
+                addTimerModal(context, appState);
               },
               icon: const Icon(Icons.add_alarm_outlined))
           ],
         ),
         body: const Center(
+          
           child: Text('No timers yet'),
         ),
       );
@@ -259,7 +229,7 @@ class _MyHomePageState extends State<MyHomePage> {
         actions: <Widget>[
           IconButton(
             onPressed: () {
-                appState.addTimer('Tmp');
+                addTimerModal(context, appState);
               },
             icon: const Icon(Icons.add_alarm_outlined))
         ],
@@ -286,6 +256,60 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
     );
   }
+
+  Future<void> addTimerModal(BuildContext context, MyAppState appState) {
+
+    final nameController = TextEditingController();
+
+    final actionButtonTextStyle = Theme.of(context).textTheme.titleMedium;
+    return showModalBottomSheet<void>(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (BuildContext context) {
+        return Column(
+          children: [
+            AppBar(
+              shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+              title: const Text('Add Timer'),
+              backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        
+              leadingWidth: 100,
+              leading: TextButton(
+                child: Text('Cancel', style: actionButtonTextStyle),
+
+                onPressed: () => Navigator.pop(context),
+              ),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () => {
+                    // TO-DO: Text validation
+                    appState.addTimer(nameController.text),
+                    Navigator.pop(context),
+                  },
+                  child: Text('Done', style: actionButtonTextStyle),
+                ),
+              ],
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20.0, 40.0, 20.0, 0.0),
+              child: Column(
+              children: <Widget>[
+                TextFormField(
+                  autocorrect: true,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    labelText: 'Timer Name'
+                  ),
+                  controller: nameController,
+                )
+              ],
+              ),
+            ),
+          ],
+        );
+      }
+    );
+  }
 }
 
 
@@ -298,42 +322,54 @@ class TimerDetailsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
 
+    var appState = context.watch<MyAppState>();
 
-    var appContext = context.watch<MyAppState>();
+    final nameController = TextEditingController();
+    nameController.text = timer.name;
+
+    final actionButtonTextStyle = Theme.of(context).textTheme.titleMedium;
 
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(timer.name),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => {
+              // TO-DO: Text validation
+              appState.setTimerName(timer, nameController.text),
+              Navigator.pop(context),
+            },
+            child: Text('Done', style: actionButtonTextStyle),
+          ),
+        ],
       ),
       body: Center(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(8.0, 40.0, 8.0, 8.0),
+          padding: const EdgeInsets.fromLTRB(20.0, 40.0, 20.0, 8.0),
           child: Column(
         
             children: [
               SizedBox(
-                width: 350,
                 child: TextFormField(
                   autocorrect: true,
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(),
                     labelText: 'Timer Name'
                   ),
-                  initialValue: timer.name,
-                  onFieldSubmitted: (value) => {
-                      appContext.setTimerName(timer, value),
-                      Navigator.pop(context) // TO-DO: Move this to a done button.
-                  },
+                  controller: nameController,
                   
                 ),
               ),
-              FilledButton(
-                onPressed: () => {
-                  appContext.deleteTimer(timer),
-                  Navigator.pop(context)
-                },
-                child: const Text('Delete'),
+              Padding(
+                padding: const EdgeInsets.only(top:20.0),
+                child: FilledButton(
+                  onPressed: () => {
+                    appState.deleteTimer(timer),
+                    Navigator.pop(context)
+                  },
+                  child: const Text('Delete'),
+                ),
               ),
             ]
           ),

@@ -325,6 +325,60 @@ class TimerDetailsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
 
+    final nameController = TextEditingController();
+    nameController.text = timer.name;
+
+    final actionButtonTextStyle = Theme.of(context).textTheme.titleMedium;
+    final fieldStyle = Theme.of(context).textTheme.bodyLarge;
+
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        title: Text(timer.name),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => {
+              Navigator.push(context, MaterialPageRoute(builder: (context) => TimerDetailsEditView(timer: timer)))
+            },
+            child: Text('Edit', style: actionButtonTextStyle),
+          ),
+        ],
+      ),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20.0, 40.0, 20.0, 8.0),
+          child: Column(
+        
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(30.0),
+                child: Row(
+                  children: [
+                    Text('Timer Name:', style: fieldStyle,),
+                    const Spacer(),
+                    Text(timer.name, style: fieldStyle,),
+                  ]
+                ),
+              ),
+            ]
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+
+
+class TimerDetailsEditView extends StatelessWidget {
+
+  const TimerDetailsEditView({super .key, required this.timer});
+
+  final TimerClock timer;
+
+  @override
+  Widget build(BuildContext context) {
+
     var appState = context.watch<MyAppState>();
 
     final nameController = TextEditingController();
